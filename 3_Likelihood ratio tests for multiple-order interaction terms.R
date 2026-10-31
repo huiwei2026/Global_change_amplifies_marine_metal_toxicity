@@ -1,95 +1,119 @@
-
+################################################
+#                                              #
+#Figure S2; Table S4: Likelihood ratio tests   #
+#                                              #
+################################################
 library(metafor)
 
-data <- read.csv("Supplementary Data 1.csv", header = TRUE)
-nrow(data)
-data$Stressor <- as.factor(data$Stressor)
-data$Taxa <- as.factor(data$Taxa)
-data$Trait <- as.factor(data$Trait)
-data$Metal <- as.factor(data$Metal)
-data$Habitat <- as.factor(data$Habitat)
 
-#Likelihood ratio tests for two-order interaction terms in multivariate meta-analysis models
 m1<-rma.mv(yi, vi, mods=~Stressor:Taxa,random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 m2<-rma.mv(yi, vi, mods=~1,  random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 anova(m1,m2)
 #          df      AIC       BIC     AICc    logLik     LRT   pval         QE 
-# Full    19 957.6598 1041.6087 958.9414 -459.8299                38426.5385 
-# Reduced  3 978.7068  991.9619 978.7462 -486.3534 53.0470 <.0001 41706.3867 
-# ΔAIC  -21.047     
+# Full    19 953.3854 1037.1787 954.6779 -457.6927                38382.6813 
+# Reduced  3 972.4227  985.6532 972.4624 -483.2113 51.0373 <.0001 41656.8496 
+
+# ΔAIC  -19.0373       
+
+
 
 m1<-rma.mv(yi, vi, mods=~Stressor:Habitat,random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 m2<-rma.mv(yi, vi, mods=~1,  random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 anova(m1,m2)
-#         df      AIC      BIC     AICc    logLik     LRT   pval         QE 
-# Full    12 946.3622 999.3826 946.8822 -461.1811                39558.5057 
-# Reduced  3 978.7068 991.9619 978.7462 -486.3534 50.3446 <.0001 41706.3867 
-# ΔAIC  -32.3446    
+#         df      AIC       BIC     AICc    logLik     LRT   pval         QE 
+# Full    12 948.2625 1001.1846 948.7868 -462.1312                39567.8931 
+# Reduced  3 972.4227  985.6532 972.4624 -483.2113 42.1602 <.0001 41656.8496 
+
+# ΔAIC  -24.1602      
+
+
 
 m1<-rma.mv(yi, vi, mods=~Stressor:Metal,random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 m2<-rma.mv(yi, vi, mods=~1,  random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 anova(m1,m2)
-# df      AIC       BIC     AICc    logLik     LRT   pval         QE 
-# Full    33 980.5116 1126.3177 984.3873 -457.2558                35477.0049 
-# Reduced  3 978.7068  991.9619 978.7462 -486.3534 58.1951 0.0015 41706.3867 
-# ΔAIC  1.8048   
+#        df      AIC       BIC     AICc    logLik     LRT   pval         QE 
+# Full    33 976.0945 1121.6303 980.0039 -455.0472                35451.8399 
+# Reduced  3 972.4227  985.6532 972.4624 -483.2113 56.3282 0.0025 41656.8496 
+
+# ΔAIC  3.6718      
+
+
 
 m1<-rma.mv(yi, vi, mods=~Stressor:Trait,random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 m2<-rma.mv(yi, vi, mods=~1,  random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 anova(m1,m2)
 #         df      AIC       BIC     AICc    logLik     LRT   pval         QE 
-# Full    26 984.0408 1098.9183 986.4367 -466.0204                25910.8040 
-# Reduced  3 978.7068  991.9619 978.7462 -486.3534 40.6660 0.0129 41706.3867 
-# ΔAIC 5.334   
+# Full    26 978.7644 1093.4290 981.1810 -463.3822                25884.7231 
+# Reduced  3 972.4227  985.6532 972.4624 -483.2113 39.6583 0.0168 41656.8496 
 
-#Likelihood ratio tests for three-order interaction terms in multivariate meta-analysis models
+# ΔAIC 6.3417   
+
+
+
+
+
+
+
+
 m1<-rma.mv(yi, vi, mods=~Stressor:Taxa:Trait,random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 m2<-rma.mv(yi, vi, mods=~1,  random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 anova(m1,m2)
-#          df      AIC       BIC      AICc    logLik      LRT   pval         QE 
-# Full    76 986.2879 1322.0837 1008.1238 -417.1440                 15291.2390 
-# Reduced  3 978.7068  991.9619  978.7462 -486.3534 138.4188 <.0001 41706.3867 
-# ΔAIC  7.5811  
+#         df      AIC       BIC      AICc    logLik      LRT   pval         QE 
+# Full    76 980.4702 1315.6435 1002.5117 -414.2351                 15274.0300 
+# Reduced  3 972.4227  985.6532  972.4624 -483.2113 137.9524 <.0001 41656.8496 
+# ΔAIC  8.0475   
+
+
+
 
 m1<-rma.mv(yi, vi, mods=~Stressor:Taxa:Metal,random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 m2<-rma.mv(yi, vi, mods=~1,  random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 anova(m1,m2)
-#          df      AIC       BIC     AICc    logLik      LRT   pval         QE 
-# Full    72 972.8266 1290.9489 992.2933 -414.4133                 31120.5846 
-# Reduced  3 978.7068  991.9619 978.7462 -486.3534 143.8801 <.0001 41706.3867 
-# ΔAIC  -5.8802 
+#         df      AIC       BIC     AICc    logLik      LRT   pval         QE 
+# Full    72 969.4890 1287.0216 989.1376 -412.7445                 31084.3009 
+# Reduced  3 972.4227  985.6532 972.4624 -483.2113 140.9336 <.0001 41656.8496 
+# ΔAIC  -2.9337  
+
+
 
 m1<-rma.mv(yi, vi, mods=~Stressor:Taxa:Habitat,random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 m2<-rma.mv(yi, vi, mods=~1,  random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 anova(m1,m2)
-#          df      AIC       BIC     AICc    logLik     LRT   pval         QE 
-# Full    31 953.4849 1090.4542 956.8997 -445.7425                36786.9917 
-# Reduced  3 978.7068  991.9619 978.7462 -486.3534 81.2219 <.0001 41706.3867 
-# ΔAIC  -25.2219  
+#         df      AIC       BIC     AICc    logLik     LRT   pval         QE 
+# Full    32 952.0340 1093.1596 955.7071 -444.0170                37367.7562 
+# Reduced  3 972.4227  985.6532 972.4624 -483.2113 78.3887 <.0001 41656.8496
+
+# ΔAIC  -20.3887  
+
+
 
 m1<-rma.mv(yi, vi, mods=~Stressor:Trait:Metal,random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 m2<-rma.mv(yi, vi, mods=~1,  random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 anova(m1,m2)
 #         df      AIC       BIC      AICc    logLik      LRT   pval         QE 
-# Full    103 989.9522 1445.0438 1032.0426 -391.9761                 14941.0458 
-# Reduced   3 978.7068  991.9619  978.7462 -486.3534 188.7546 <.0001 41706.3867 
-# ΔAIC  11.2454  
+# Full    103 984.1145 1438.3626 1026.6225 -389.0573                 14910.4611 
+# Reduced   3 972.4227  985.6532  972.4624 -483.2113 188.3081 <.0001 41656.8496 
+
+# ΔAIC  11.6918   
+
+
 
 m1<-rma.mv(yi, vi, mods=~Stressor:Trait:Habitat,random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 m2<-rma.mv(yi, vi, mods=~1,  random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 anova(m1,m2)
-#          df      AIC       BIC     AICc    logLik      LRT   pval         QE 
-# Full    48 955.2385 1167.3200 963.5789 -429.6192                 18923.7626 
-# Reduced  3 978.7068  991.9619 978.7462 -486.3534 113.4683 <.0001 41706.3867 
-# ΔAIC  -23.4683   
+#         df      AIC       BIC     AICc    logLik      LRT   pval         QE 
+# Full    49 957.2696 1173.3682 966.0510 -429.6348                 17583.3985 
+# Reduced  3 972.4227  985.6532 972.4624 -483.2113 107.1531 <.0001 41656.8496 
+# ΔAIC  -15.1531   
+
+
 
 m1<-rma.mv(yi, vi, mods=~Stressor:Metal:Habitat,random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 m2<-rma.mv(yi, vi, mods=~1,  random=list(~1|Paper_id/Observation_id),method="ML",data=data)
 anova(m1,m2)
-#          df      AIC       BIC     AICc    logLik      LRT   pval         QE 
-# Full    51 971.7284 1197.0651 981.1830 -434.8642                 33625.9479 
-# Reduced  3 978.7068  991.9619 978.7462 -486.3534 102.9783 <.0001 41706.3867 
-# ΔAIC   -6.9784 
+#         df      AIC       BIC     AICc    logLik     LRT   pval         QE 
+# Full    50 976.5137 1197.0224 985.6699 -438.2568                33769.7939 
+# Reduced  3 972.4227  985.6532 972.4624 -483.2113 89.9090 0.0002 41656.8496 
 
 
-
+# ΔAIC   4.091 

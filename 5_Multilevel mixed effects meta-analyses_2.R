@@ -1,159 +1,13 @@
 library(metafor)
 library(dplyr)
-library(MuMIn)
-
-####################### Supplementary Table 18 #######################
-# ==================== Define general function ====================
-fit_models_and_get_results <- function(data_subset, group_name) {
-  results <- data.frame()
-  if (nrow(data_subset) < 12) {
-    return(results)
-  }
-  data_subset$Latitude_abs <- abs(data_subset$Latitude)
-  
-  # model 1
-  try({
-    rmod.linear <- rma.mv(yi, vi, 
-                          mods = ~ Latitude_abs,
-                          method = "REML",
-                          random = list(~1 | Paper_id / Observation_id), 
-                          data = data_subset)
-    
-    results <- rbind(results, data.frame(
-      Group = group_name,
-      Model = "Linear",
-      Formula = "yi ~ Latitude_abs",
-      Intercept = coef(rmod.linear)[1],
-      Slope1 = coef(rmod.linear)[2],
-      Slope2 = NA,
-      AIC = AIC(rmod.linear),
-      AICc = AICc(rmod.linear),
-      stringsAsFactors = FALSE
-    ))
-  }, silent = TRUE)
-  
-  # model 2
-  try({
-    data_quad <- data_subset
-    data_quad$Latitude_abs_sq <- data_quad$Latitude_abs^2
-    
-    rmod.quadratic <- rma.mv(yi, vi, 
-                             mods = ~ Latitude_abs + Latitude_abs_sq,
-                             method = "REML",
-                             random = list(~1 | Paper_id / Observation_id), 
-                             data = data_quad)
-    
-    results <- rbind(results, data.frame(
-      Group = group_name,
-      Model = "Quadratic (raw)",
-      Formula = "yi ~ Latitude_abs + Latitude_abs^2",
-      Intercept = coef(rmod.quadratic)[1],
-      Slope1 = coef(rmod.quadratic)[2],
-      Slope2 = coef(rmod.quadratic)[3],
-      AIC = AIC(rmod.quadratic),
-      AICc = AICc(rmod.quadratic),
-      stringsAsFactors = FALSE
-    ))
-  }, silent = TRUE)
-  
-  # model 3
-  try({
-    data_log <- data_subset
-    data_log$logdist <- log(data_log$Latitude_abs)
-    data_log$logdist_sq <- data_log$logdist^2
-    
-    rmod.log_quadratic <- rma.mv(yi, vi, 
-                                 mods = ~ logdist_sq + logdist,
-                                 method = "REML",
-                                 random = list(~1 | Paper_id / Observation_id), 
-                                 data = data_log)
-    
-    results <- rbind(results, data.frame(
-      Group = group_name,
-      Model = "Log-quadratic",
-      Formula = "yi ~ log(Latitude_abs) + log(Latitude_abs)^2",
-      Intercept = coef(rmod.log_quadratic)[1],
-      Slope1 = coef(rmod.log_quadratic)[3],  # logdist
-      Slope2 = coef(rmod.log_quadratic)[2],  # logdist_sq
-      AIC = AIC(rmod.log_quadratic),
-      AICc = AICc(rmod.log_quadratic),
-      stringsAsFactors = FALSE
-    ))
-  }, silent = TRUE)
-  
-  return(results)
-}
-
-data <- read.csv("Supplementary Data 1.csv", header = TRUE)
-# ==================== Taxa ====================
-taxa_list <- c("Algae+Protist", "Radiata", "Lophotrochozoa", "Ecdysozoa", "Deuterostomia")
-
-all_taxa_results <- data.frame()
-for (taxa_name in taxa_list) {
-  cat("  分析 Taxa:", taxa_name, "\n")
-  data_subset <- subset(data, Taxa == taxa_name)
-  taxa_results <- fit_models_and_get_results(data_subset, paste("Taxa:", taxa_name))
-  all_taxa_results <- rbind(all_taxa_results, taxa_results)
-}
-
-write.csv(all_taxa_results, "Model_Comparison_All_Taxa01.csv", row.names = FALSE)
-
-# ==================== A-Taxa ====================
-data_stressorA <- subset(data, Stressor == "A")
-stressorA_taxa_results <- data.frame()
-for (taxa_name in taxa_list) {
-  cat("  分析 Taxa:", taxa_name, "(Stressor A)\n")
-  data_subset <- subset(data_stressorA, Taxa == taxa_name)
-  taxa_results <- fit_models_and_get_results(data_subset, paste("Taxa:", taxa_name, "(Stressor A)"))
-  stressorA_taxa_results <- rbind(stressorA_taxa_results, taxa_results)
-}
-write.csv(stressorA_taxa_results, "Model_Comparison_StressorA_All_Taxa.csv", row.names = FALSE)
-
-# ==================== W-Taxa ====================
-data_stressorW <- subset(data, Stressor == "W")
-stressorW_taxa_results <- data.frame()
-for (taxa_name in taxa_list) {
-  cat("  分析 Taxa:", taxa_name, "(Stressor W)\n")
-  data_subset <- subset(data_stressorW, Taxa == taxa_name)
-  taxa_results <- fit_models_and_get_results(data_subset, paste("Taxa:", taxa_name, "(Stressor W)"))
-  stressorW_taxa_results <- rbind(stressorW_taxa_results, taxa_results)
-}
-write.csv(stressorW_taxa_results, "Model_Comparison_StressorW_All_Taxa.csv", row.names = FALSE)
-
-# ==================== Stressor+ Overall ====================
-stressor_groups <- list(
-  "W" = subset(data, Stressor == "W"),
-  "A" = subset(data, Stressor == "A"),
-  "A-W" = subset(data, Stressor == "A-W"),
-  "H" = subset(data, Stressor == "H"),
-  "Overall" = data
-)
-
-all_stressor_results <- data.frame()
-for (stressor_name in names(stressor_groups)) {
-  cat("  分析 Stressor:", stressor_name, "\n")
-  data_subset <- stressor_groups[[stressor_name]]
-  stressor_results <- fit_models_and_get_results(data_subset, paste("Stressor:", stressor_name))
-  all_stressor_results <- rbind(all_stressor_results, stressor_results)
-}
-write.csv(all_stressor_results, "Model_Comparison_All_Stressors.csv", row.names = FALSE)
-
-
-
-
 
 ################################################
 #                                              #
-#                     Fig. 3                   #
+#              Figure 3; Table S9              #
 #                                              #
 ################################################
-
-####################### Supplementary Table 6 #######################
-
-################# Fig. 3a #################
+################# Figure 3A_All taxa #################
 ######### Overall #########
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
 rmod.mix <- rma.mv(yi, vi, 
                    mods = ~ Latitude_abs,
@@ -162,13 +16,12 @@ rmod.mix <- rma.mv(yi, vi,
                    data = data)
 rmod.mix
 
-#                estimate      se     zval    pval    ci.lb    ci.ub    
-# intrcpt        -0.1946  0.0801  -2.4306  0.0151  -0.3515  -0.0377  * 
-# Latitude_abs    0.0034  0.0021   1.5751  0.1152  -0.0008   0.0076   
+#                 estimate      se     zval    pval    ci.lb    ci.ub     
+# intrcpt        -0.2465  0.0767  -3.2129  0.0013  -0.3968  -0.0961  ** 
+# Latitude_abs    0.0050  0.0021   2.4309  0.0151   0.0010   0.0090   * 
+
 
 ######## Acidification ########
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data <- subset(data, Stressor == "A")
 nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
@@ -179,14 +32,13 @@ rmod.mix <- rma.mv(yi, vi,
                    random = list(~1 | Paper_id / Observation_id), 
                    data = data)
 rmod.mix
-#                    estimate      se     zval    pval    ci.lb    ci.ub    
-# intrcpt            0.4957  0.2254   2.1987  0.0279   0.0538   0.9375  * 
-# Latitude_abs      -0.0247  0.0120  -2.0618  0.0392  -0.0481  -0.0012  * 
-# Latitude_abs_sq    0.0003  0.0002   1.7882  0.0737  -0.0000   0.0006  .    
+#                   estimate      se     zval    pval    ci.lb   ci.ub    
+# intrcpt            0.3305  0.1970   1.6777  0.0934  -0.0556  0.7166  . 
+# Latitude_abs      -0.0180  0.0105  -1.7205  0.0853  -0.0386  0.0025  . 
+# Latitude_abs_sq    0.0002  0.0001   1.6300  0.1031  -0.0000  0.0005    
+
 
 ######### Warming ########
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data <- subset(data, Stressor == "W")
 nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
@@ -196,13 +48,11 @@ rmod.mix <- rma.mv(yi, vi,
                    random = list(~1 | Paper_id / Observation_id), 
                    data = data)
 rmod.mix
-#                estimate      se     zval    pval    ci.lb    ci.ub      
-# intrcpt        -0.5828  0.0948  -6.1453  <.0001  -0.7687  -0.3969  *** 
-# Latitude_abs    0.0129  0.0027   4.8858  <.0001   0.0078   0.0181  *** 
+#                 estimate      se     zval    pval    ci.lb    ci.ub      
+# intrcpt        -0.6119  0.0934  -6.5484  <.0001  -0.7951  -0.4288  *** 
+# Latitude_abs    0.0139  0.0026   5.3073  <.0001   0.0088   0.0191  *** 
 
 ######### Acidification-Warming ########
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
 data<-subset (data, Stressor == "A-W")
 nrow(data)
@@ -214,14 +64,13 @@ rmod.mix <- rma.mv(yi, vi,
                    random = list(~1 | Paper_id / Observation_id), 
                    data = data)
 rmod.mix
-#               estimate      se     zval    pval     ci.lb    ci.ub    
-# intrcpt      21.2112  9.4337   2.2484  0.0245    2.7214  39.7010  * 
-# logdist_sq    2.1035  0.8785   2.3944  0.0166    0.3816   3.8254  * 
-# logdist     -13.5354  5.7916  -2.3371  0.0194  -24.8868  -2.1840  *   
+#              estimate       se     zval    pval     ci.lb    ci.ub    
+# intrcpt      20.0024  10.0271   1.9948  0.0461    0.3497  39.6551  * 
+# logdist_sq    1.9947   0.9341   2.1354  0.0327    0.1638   3.8255  * 
+# logdist     -12.8018   6.1547  -2.0800  0.0375  -24.8648  -0.7387  * 
+  
 
 ######### Oxygen #########
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data<-subset (data, Stressor == "H")
 nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
@@ -231,15 +80,13 @@ rmod.mix <- rma.mv(yi, vi,
                    random = list(~1 | Paper_id / Observation_id), 
                    data = data)
 rmod.mix
-#                 estimate      se     zval    pval    ci.lb   ci.ub    
-# intrcpt         0.6424  0.6123   1.0491  0.2941  -0.5577  1.8425    
-# Latitude_abs   -0.0214  0.0134  -1.5972  0.1102  -0.0477  0.0049    
+#                estimate      se     zval    pval    ci.lb   ci.ub    
+# intrcpt         0.6257  0.6616   0.9457  0.3443  -0.6710  1.9224    
+# Latitude_abs   -0.0203  0.0146  -1.3936  0.1635  -0.0489  0.0083    
 
-################# Fig. 3b #################
+################# Figure 3B #################
 ################ Overall ################
 # Algae+Protist
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
 data<-subset (data, Taxa == "Algae+Protist")
 nrow(data)
@@ -251,13 +98,11 @@ rmod.mix <- rma.mv(yi, vi,
                    data = data)
 rmod.mix
 #                   estimate      se     zval    pval    ci.lb   ci.ub    
-# intrcpt            0.4963  0.3945   1.2582  0.2083  -0.2769  1.2695    
-# Latitude_abs      -0.0198  0.0203  -0.9760  0.3291  -0.0595  0.0199    
-# Latitude_abs_sq    0.0003  0.0002   1.1857  0.2358  -0.0002  0.0007  
+# intrcpt            0.5385  0.3894   1.3831  0.1666  -0.2246  1.3017    
+# Latitude_abs      -0.0244  0.0201  -1.2097  0.2264  -0.0638  0.0151    
+# Latitude_abs_sq    0.0003  0.0002   1.5048  0.1324  -0.0001  0.0008    
 
 # Radiata
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
 data<-subset (data, Taxa == "Radiata")
 nrow(data)
@@ -268,31 +113,25 @@ rmod.mix <- rma.mv(yi, vi,
                    data = data)
 rmod.mix
 #                 estimate      se     zval    pval    ci.lb   ci.ub    
-# intrcpt        -0.3295  0.2221  -1.4839  0.1378  -0.7648  0.1057    
-# Latitude_abs    0.0028  0.0086   0.3293  0.7419  -0.0141  0.0198   
+# intrcpt        -0.5634  0.3010  -1.8719  0.0612  -1.1532  0.0265  . 
+# Latitude_abs    0.0152  0.0140   1.0903  0.2756  -0.0122  0.0426     
 
 # Lophotrochozoa
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
 data<-subset (data, Taxa == "Lophotrochozoa")
 nrow(data)
-data$logdist<-log(data$Latitude_abs)
-data$logdist_sq <- data$logdist^2
 rmod.mix <- rma.mv(yi, vi, 
-                   mods = ~ logdist_sq + logdist,
+                   mods = ~ Latitude_abs,
                    method = "REML",
                    random = list(~1 | Paper_id / Observation_id), 
                    data = data)
 rmod.mix
-#               estimate      se     zval    pval     ci.lb    ci.ub    
-# intrcpt       7.7738  5.6219   1.3828  0.1667   -3.2450  18.7926    
-# logdist_sq    0.5968  0.4240   1.4073  0.1593   -0.2344   1.4279    
-# logdist      -4.3334  3.0884  -1.4031  0.1606  -10.3866   1.7198    
+#                 estimate      se     zval    pval    ci.lb   ci.ub    
+# intrcpt        -0.2188  0.1614  -1.3555  0.1753  -0.5351  0.0976    
+# Latitude_abs    0.0040  0.0040   0.9860  0.3241  -0.0039  0.0119    
+
 
 # Ecdysozoa
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
 data<-subset (data, Taxa == "Ecdysozoa")
 nrow(data)
@@ -304,14 +143,13 @@ rmod.mix <- rma.mv(yi, vi,
                    random = list(~1 | Paper_id / Observation_id), 
                    data = data)
 rmod.mix
-#             estimate      se     zval    pval     ci.lb    ci.ub     
-# intrcpt      -6.2432  2.1277  -2.9342  0.0033  -10.4134  -2.0730  ** 
-# logdist_sq   -0.5876  0.2070  -2.8382  0.0045   -0.9934  -0.1818  ** 
-# logdist       3.8152  1.3369   2.8538  0.0043    1.1950   6.4355  ** 
+#              estimate      se     zval    pval     ci.lb    ci.ub     
+# intrcpt      -6.2151  2.0876  -2.9771  0.0029  -10.3068  -2.1235  ** 
+# logdist_sq   -0.5849  0.2040  -2.8673  0.0041   -0.9847  -0.1851  ** 
+# logdist       3.7981  1.3145   2.8894  0.0039    1.2217   6.3744  ** 
+
 
 # Deuterostomia
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
 data<-subset (data, Taxa == "Deuterostomia")
 nrow(data)
@@ -323,15 +161,14 @@ rmod.mix <- rma.mv(yi, vi,
                    random = list(~1 | Paper_id / Observation_id), 
                    data = data)
 rmod.mix
-#               estimate      se     zval    pval     ci.lb    ci.ub    
-# intrcpt      -6.9244  3.3521  -2.0657  0.0389  -13.4945  -0.3544  * 
-# logdist_sq   -0.6239  0.3119  -2.0005  0.0454   -1.2351  -0.0126  * 
-# logdist       4.1387  2.0566   2.0123  0.0442    0.1077   8.1696  * 
+#              estimate      se     zval    pval     ci.lb    ci.ub    
+# intrcpt      -7.1058  3.2565  -2.1820  0.0291  -13.4884  -0.7231  * 
+# logdist_sq   -0.6435  0.3020  -2.1305  0.0331   -1.2355  -0.0515  * 
+# logdist       4.2606  1.9942   2.1365  0.0326    0.3521   8.1691  * 
+
 
 ######### Acidification #######
 # Algae+Protist+Latitude
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
 data<-subset (data, Taxa == "Algae+Protist")
 data <- subset(data, Stressor == "A")
@@ -343,14 +180,14 @@ rmod.mix <- rma.mv(yi, vi,
                    random = list(~1 | Paper_id / Observation_id), 
                    data = data)
 rmod.mix
-#                 estimate      se     zval    pval    ci.lb   ci.ub    
-# intrcpt            0.6568  0.4430   1.4826  0.1382  -0.2115  1.5252    
-# Latitude_abs      -0.0254  0.0237  -1.0730  0.2833  -0.0718  0.0210    
-# Latitude_abs_sq    0.0003  0.0003   1.0506  0.2935  -0.0003  0.0009  
+#                   estimate      se     zval    pval    ci.lb   ci.ub    
+# intrcpt            0.7028  0.4396   1.5987  0.1099  -0.1588  1.5644    
+# Latitude_abs      -0.0295  0.0233  -1.2672  0.2051  -0.0752  0.0161    
+# Latitude_abs_sq    0.0004  0.0003   1.3163  0.1881  -0.0002  0.0009   
+
+
 
 # Radiata+Latitude
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
 data<-subset (data, Taxa == "Radiata")
 data <- subset(data, Stressor == "A")
@@ -361,33 +198,28 @@ rmod.mix <- rma.mv(yi, vi,
                    random = list(~1 | Paper_id / Observation_id), 
                    data = data)
 rmod.mix
-#                 estimate      se     zval    pval    ci.lb   ci.ub    
-# intrcpt         0.1185  0.1846   0.6423  0.5207  -0.2432  0.4803    
-# Latitude_abs   -0.0104  0.0059  -1.7457  0.0809  -0.0220  0.0013  . 
+#                estimate      se     zval    pval    ci.lb   ci.ub    
+# intrcpt        -0.2714  0.2677  -1.0138  0.3107  -0.7960  0.2533    
+# Latitude_abs    0.0063  0.0110   0.5721  0.5673  -0.0153  0.0278    
+
 
 # Lophotrochozoa+Latitude
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
 data<-subset (data, Taxa == "Lophotrochozoa")
 data <- subset(data, Stressor == "A")
 nrow(data)
-data$logdist<-log(data$Latitude_abs)
-data$logdist_sq <- data$logdist^2
 rmod.mix <- rma.mv(yi, vi, 
-                   mods = ~ logdist_sq + logdist,
+                   mods = ~ Latitude_abs,
                    method = "REML",
                    random = list(~1 | Paper_id / Observation_id), 
                    data = data)
 rmod.mix
-#              estimate       se     zval    pval     ci.lb    ci.ub    
-# intrcpt      15.4166  11.3364   1.3599  0.1739   -6.8023  37.6355    
-# logdist_sq    1.2083   0.8947   1.3505  0.1768   -0.5453   2.9618    
-# logdist      -8.6561   6.3739  -1.3580  0.1745  -21.1488   3.8367     
+#                estimate      se     zval    pval    ci.lb   ci.ub    
+# intrcpt        -0.1011  0.2169  -0.4660  0.6412  -0.5263  0.3241    
+# Latitude_abs    0.0011  0.0056   0.2023  0.8397  -0.0098  0.0121    
+
 
 # Ecdysozoa+Latitude
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
 data<-subset (data, Taxa == "Ecdysozoa")
 data <- subset(data, Stressor == "A")
@@ -401,13 +233,12 @@ rmod.mix <- rma.mv(yi, vi,
                    data = data)
 rmod.mix
 #               estimate      se     zval    pval    ci.lb    ci.ub    
-# intrcpt      -5.0412  2.1106  -2.3885  0.0169  -9.1778  -0.9045  * 
-# logdist_sq   -0.5171  0.2080  -2.4857  0.0129  -0.9248  -0.1094  * 
-# logdist       3.2709  1.3274   2.4642  0.0137   0.6693   5.8725  * 
+# intrcpt      -5.0284  2.1070  -2.3866  0.0170  -9.1580  -0.8988  * 
+# logdist_sq   -0.5166  0.2083  -2.4802  0.0131  -0.9248  -0.1084  * 
+# logdist       3.2652  1.3268   2.4609  0.0139   0.6646   5.8657  * 
+  
 
 # Deuterostomia+Latitude
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
 data<-subset (data, Taxa == "Deuterostomia")
 data <- subset(data, Stressor == "A")
@@ -420,15 +251,13 @@ rmod.mix <- rma.mv(yi, vi,
                    random = list(~1 | Paper_id / Observation_id), 
                    data = data)
 rmod.mix
-#               estimate       se     zval    pval     ci.lb     ci.ub    
-# intrcpt      58.1049  23.6127   2.4607  0.0139   11.8249  104.3850  * 
-# logdist_sq    3.6786   1.6626   2.2125  0.0269    0.4199    6.9372  * 
-# logdist     -29.3665  12.5319  -2.3433  0.0191  -53.9286   -4.8044  * 
+#              estimate       se     zval    pval     ci.lb     ci.ub    
+# intrcpt      59.0298  23.1693   2.5478  0.0108   13.6188  104.4408  * 
+# logdist_sq    3.7344   1.6199   2.3053  0.0211    0.5594    6.9093  * 
+# logdist     -29.8234  12.2564  -2.4333  0.0150  -53.8455   -5.8012  * 
 
 ######## Warming ########
 # Algae+Protist+Latitude
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
 data<-subset (data, Taxa == "Algae+Protist")
 data <- subset(data, Stressor == "W")
@@ -439,30 +268,31 @@ rmod.mix <- rma.mv(yi, vi,
                    random = list(~1 | Paper_id / Observation_id), 
                    data = data)
 rmod.mix
-#                estimate      se     zval    pval    ci.lb   ci.ub    
-# intrcpt        -0.3222  0.2571  -1.2535  0.2100  -0.8260  0.1816    
-# Latitude_abs    0.0136  0.0057   2.4038  0.0162   0.0025  0.0247  * 
+#                estimate      se     zval    pval    ci.lb   ci.ub     
+# intrcpt        -0.4151  0.2416  -1.7185  0.0857  -0.8886  0.0583   . 
+# Latitude_abs    0.0154  0.0052   2.9815  0.0029   0.0053  0.0255  ** 
+  
 
 # Radiata+Latitude
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
+data$logdist<-log(data$Latitude_abs)
+data$logdist_sq <- data$logdist^2
 data<-subset (data, Taxa == "Radiata")
 data <- subset(data, Stressor == "W")
 nrow(data)
 rmod.mix <- rma.mv(yi, vi, 
-                   mods = ~ Latitude_abs,
+                   mods = ~ logdist_sq + logdist,
                    method = "REML",
                    random = list(~1 | Paper_id / Observation_id), 
                    data = data)
 rmod.mix
-#                 estimate      se     zval    pval    ci.lb   ci.ub    
-# intrcpt        -0.9408  0.7479  -1.2578  0.2084  -2.4068  0.5251    
-# Latitude_abs    0.0301  0.0366   0.8236  0.4102  -0.0416  0.1019    
+#              estimate       se     zval    pval     ci.lb     ci.ub    
+# intrcpt      34.0224  35.7903   0.9506  0.3418  -36.1252  104.1701    
+# logdist_sq    3.8902   3.8477   1.0111  0.3120   -3.6511   11.4315    
+# logdist     -23.1620  23.5012  -0.9856  0.3243  -69.2235   22.8996    
+
 
 # Lophotrochozoa+Latitude
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
 data<-subset (data, Taxa == "Lophotrochozoa")
 data <- subset(data, Stressor == "W")
@@ -474,12 +304,11 @@ rmod.mix <- rma.mv(yi, vi,
                    data = data)
 rmod.mix
 #                estimate      se     zval    pval    ci.lb   ci.ub    
-# intrcpt        -0.4111  0.2780  -1.4790  0.1392  -0.9559  0.1337    
-# Latitude_abs    0.0090  0.0065   1.3861  0.1657  -0.0037  0.0216    
+# intrcpt        -0.4890  0.2627  -1.8614  0.0627  -1.0039  0.0259  . 
+# Latitude_abs    0.0111  0.0062   1.7832  0.0745  -0.0011  0.0232  .     
+
 
 # Ecdysozoa+Latitude
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
 data<-subset (data, Taxa == "Ecdysozoa")
 data <- subset(data, Stressor == "W")
@@ -493,27 +322,36 @@ rmod.mix <- rma.mv(yi, vi,
                    data = data)
 rmod.mix
 #              estimate      se     zval    pval    ci.lb   ci.ub    
-# intrcpt      -3.6095  2.7954  -1.2912  0.1966  -9.0884  1.8694    
-# logdist_sq   -0.2686  0.2848  -0.9431  0.3456  -0.8267  0.2896    
-# logdist       1.9135  1.8005   1.0628  0.2879  -1.6154  5.4424  
+# intrcpt      -3.5669  2.7594  -1.2926  0.1961  -8.9752  1.8414    
+# logdist_sq   -0.2654  0.2821  -0.9408  0.3468  -0.8184  0.2875    
+# logdist       1.8903  1.7807   1.0615  0.2885  -1.5999  5.3805    
+
+
 
 # Deuterostomia+Latitude
-data<-read.csv ("Supplementary Data 1.csv", header =T)
-nrow(data)
 data$Latitude_abs <- abs(data$Latitude)
+data$Latitude_abs_sq <- data$Latitude_abs^2
 data<-subset (data, Taxa == "Deuterostomia")
 data <- subset(data, Stressor == "W")
 nrow(data)
-data$logdist<-log(data$Latitude_abs)
-data$logdist_sq <- data$logdist^2
 rmod.mix <- rma.mv(yi, vi, 
-                   mods = ~ logdist_sq + logdist,
+                   mods = ~ Latitude_abs + Latitude_abs_sq,
                    method = "REML",
                    random = list(~1 | Paper_id / Observation_id), 
                    data = data)
 rmod.mix
-#              estimate      se     zval    pval     ci.lb    ci.ub     
-# intrcpt     -11.6397  3.6992  -3.1466  0.0017  -18.8900  -4.3894  ** 
-# logdist_sq   -1.1898  0.3951  -3.0116  0.0026   -1.9642  -0.4155  ** 
-# logdist       7.4526  2.4445   3.0487  0.0023    2.6615  12.2436  ** 
+#                   estimate      se     zval    pval    ci.lb    ci.ub      
+# intrcpt           -1.7598  0.4541  -3.8751  0.0001  -2.6499  -0.8697  *** 
+# Latitude_abs       0.1406  0.0412   3.4142  0.0006   0.0599   0.2213  *** 
+# Latitude_abs_sq   -0.0027  0.0008  -3.3718  0.0007  -0.0043  -0.0011  *** 
+
+
+
+
+
+
+
+
+
+
 
